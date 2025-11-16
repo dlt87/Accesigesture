@@ -40,13 +40,14 @@ def move_cursor(hand_landmarks, settings):
     if prev_x == 0 and prev_y == 0:
         # First frame - initialize
         prev_x, prev_y = x, y
-    else:
-        # Smooth the movement
-        x = int(prev_x * (1 - smoothing_factor) + x * smoothing_factor)
-        y = int(prev_y * (1 - smoothing_factor) + y * smoothing_factor)
+    
+    # Smooth the movement using exponential moving average
+    smooth_x = prev_x * (1 - smoothing_factor) + x * smoothing_factor
+    smooth_y = prev_y * (1 - smoothing_factor) + y * smoothing_factor
     
     # Update previous position
-    prev_x, prev_y = x, y
+    prev_x, prev_y = smooth_x, smooth_y
     
-    # Move the cursor
-    pyautogui.moveTo(x, y, duration=0)
+    # Move the cursor directly without integer conversion until the end
+    # This preserves sub-pixel precision for smoother movement
+    pyautogui.moveTo(int(smooth_x), int(smooth_y), duration=0, _pause=False)

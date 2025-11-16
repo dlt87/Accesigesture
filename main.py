@@ -53,13 +53,19 @@ settings.create_window()
 # --- Setup ---
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
+    static_image_mode=False,
+    max_num_hands=1,  # Only track one hand for better performance
+    model_complexity=0,  # Use lightweight model for speed (0=fastest, 1=balanced)
     min_detection_confidence=settings.min_detection_confidence, 
     min_tracking_confidence=settings.min_tracking_confidence
 )
 mp_drawing = mp.solutions.drawing_utils
 cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+# Optimize for low latency
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)  # Lower resolution = faster processing
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimize camera buffer lag
+cap.set(cv2.CAP_PROP_FPS, 60)  # Request higher FPS if camera supports it
 pyautogui.PAUSE = 0 
 
 
@@ -145,9 +151,15 @@ while cap.isOpened() and running:
         running = False
         continue
 
-    image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
-    results = hands.process(image)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    # Optimize: Flip and convert in one step, process immediately
+    image = cv2.flip(image, 1)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    
+    # Process hand detection (this is the main bottleneck)
+    results = hands.process(image_rgb)
+    
+    # Continue using the BGR image for display (skip unnecessary conversion back)
+    # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # Not needed!
 
     gesture_detected = "None" 
     action_to_perform = "None" 
@@ -155,7 +167,10 @@ while cap.isOpened() and running:
     if results.multi_hand_landmarks:
         for hand_index, hand_landmarks in enumerate(results.multi_hand_landmarks):
             
-            mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            # Only draw landmarks if debug mode is on (saves processing time)
+            if debug:
+                mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            
             fingers_list = get_finger_states(hand_landmarks) 
             if fingers_list is None: continue
             
@@ -305,6 +320,8 @@ while cap.isOpened() and running:
             print(f"Error setting window style: {e}")
     # --- END NEW ---
 
+    # Reduce waitKey to absolute minimum for lower latency
+    # 1ms is the minimum, any lower and OpenCV won't process events
     key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):
         running = False 
