@@ -240,13 +240,6 @@ class SettingsWindow:
         )
         self.pinch_slider.pack(fill=tk.X)
         
-        self.fist_cooldown_slider = ModernSlider(
-            gesture_card, "Fist Cooldown", self.fist_cooldown,
-            0.1, 3.0, 0.1, lambda v: setattr(self, 'fist_cooldown', v),
-            "Time between repeated fist actions", unit="s"
-        )
-        self.fist_cooldown_slider.pack(fill=tk.X)
-        
         self.scroll_speed_slider = ModernSlider(
             gesture_card, "Scroll Speed", self.scroll_speed,
             1, 10, 1, lambda v: setattr(self, 'scroll_speed', int(v)),
