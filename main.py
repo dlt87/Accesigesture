@@ -9,11 +9,19 @@ from gestures import openhand
 from gestures import scrolldown
 from gestures import scrollup
 from gestures import leftclick
+from settings_window import SettingsWindow
 
+
+# --- Settings Window ---
+settings = SettingsWindow()
+settings.create_window()
 
 # --- Setup ---
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
+hands = mp_hands.Hands(
+    min_detection_confidence=settings.min_detection_confidence, 
+    min_tracking_confidence=settings.min_tracking_confidence
+)
 mp_drawing = mp.solutions.drawing_utils
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -22,12 +30,10 @@ pyautogui.PAUSE = 0
 
 # --- Gesture State Tracking ---
 last_fist_action_time = 0
-FIST_COOLDOWN = 1.0  # seconds between fist right-clicks
 last_gesture = None  # Track previous gesture to detect state changes
 scroll_frame_counter = 0  # Frame counter for scroll throttling
 SCROLL_EVERY_N_FRAMES = 2  # Execute scroll every N frames
 pinch_active = False  # Track if pinch is currently active
-PINCH_THRESHOLD = 0.05  # Distance threshold for pinch detection
 debug = True
 program_active = True  # Track if program is active or paused
 pointer_was_up = False  # Track if pointer finger was up in previous frame
@@ -176,7 +182,7 @@ while cap.isOpened():
             if program_active:
                 
                 # PINCH: Left click hold/release
-                if is_pinch(hand_landmarks, PINCH_THRESHOLD):
+                if is_pinch(hand_landmarks, settings.pinch_threshold):
                     gesture_detected = "PINCH"
                     if not pinch_active:
                         leftclick.left_click_down()
@@ -189,24 +195,24 @@ while cap.isOpened():
                 # FIST: Single right-click with cooldown
                 if fingers_list == [0, 0, 0, 0, 0]:
                     gesture_detected = "FIST"
-                    if current_time - last_fist_action_time > FIST_COOLDOWN:
+                    if current_time - last_fist_action_time > settings.fist_cooldown:
                         rightclick.rightclick()
                         last_fist_action_time = current_time
                 
                 # THUMBS UP: Continuous scroll up
                 elif is_thumbs_up(hand_landmarks, fingers_list):
                     gesture_detected = "THUMBS_UP"
-                    scrollup.scroll_up()
+                    scrollup.scroll_up(settings.scroll_speed)
                 
                 # THUMBS DOWN: Continuous scroll down
                 elif is_thumbs_down(hand_landmarks, fingers_list):
                     gesture_detected = "THUMBS_DOWN"
-                    scrolldown.scroll_down()
+                    scrolldown.scroll_down(settings.scroll_speed)
                 
                 # OPEN HAND: Move cursor
                 if fingers_list == [1, 1, 1, 1, 1]:
                     gesture_detected = "OPEN"
-                    openhand.move_cursor(hand_landmarks)
+                    openhand.move_cursor(hand_landmarks, settings)
 
             
             

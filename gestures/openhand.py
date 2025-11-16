@@ -7,9 +7,8 @@ screen_width, screen_height = pyautogui.size()
 
 # Smoothing variables
 prev_x, prev_y = 0, 0
-smoothing_factor = 0.2  # Lower = smoother but slower response (0-1)
 
-def move_cursor(hand_landmarks):
+def move_cursor(hand_landmarks, settings):
     """
     Moves the cursor based on the position of the hand.
     Uses the wrist as the reference point.
@@ -20,14 +19,12 @@ def move_cursor(hand_landmarks):
     lms = hand_landmarks.landmark
     wrist = lms[0]  # Wrist
     
-    # Define a region of interest (ROI) for hand tracking
-    # This maps a smaller hand movement area to the full screen
-    roi_x_max = 0.9
-    roi_y_max = 0.9
-
-    # Calculate min values to keep the 60% (0.6) size
-    roi_x_min = 0.5  # (1.0 - 0.6)
-    roi_y_min = 0.5  # (1.0 - 0.6)
+    # Get ROI settings from settings window
+    roi_x_min = settings.roi_x_min
+    roi_x_max = settings.roi_x_max
+    roi_y_min = settings.roi_y_min
+    roi_y_max = settings.roi_y_max
+    smoothing_factor = settings.smoothing_factor
 
     
     
@@ -53,4 +50,3 @@ def move_cursor(hand_landmarks):
     
     # Move the cursor
     pyautogui.moveTo(x, y, duration=0)
-    
