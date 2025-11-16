@@ -6,4 +6,3 @@ def scroll_down(speed=3):
   The negative value with frame throttling provides smooth scrolling.
   """
   pyautogui.scroll(-speed * 10)
-  print("Action: Scroll Down (Thumbs Down)") # For debugging

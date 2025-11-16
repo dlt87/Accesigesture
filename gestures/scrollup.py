@@ -6,4 +6,3 @@ def scroll_up(speed=3):
   The positive value with frame throttling provides smooth scrolling.
   """
   pyautogui.scroll(speed * 10)
-  print("Action: Scroll Up") # For debugging

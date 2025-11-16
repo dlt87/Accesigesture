@@ -30,6 +30,7 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 pyautogui.PAUSE = 0 
 
+
 # --- Gesture State Tracking ---
 last_fist_action_time = 0
 last_gesture = None  # Track previous gesture to detect state changes
@@ -184,7 +185,6 @@ while cap.isOpened():
                     program_active = not program_active
                     pointer_was_up = True
                     status = "ACTIVE" if program_active else "PAUSED"
-                    print(f"Program {status}")
             else:
                 # Reset the flag when pointer finger goes down
                 pointer_was_up = False
@@ -276,7 +276,7 @@ while cap.isOpened():
     cv2.imshow(window_name, image)
     cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
     
-    key = cv2.waitKey(5) & 0xFF
+    key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):
         break
     
