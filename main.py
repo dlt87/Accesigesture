@@ -145,6 +145,9 @@ def is_pinch_mid(hand_landmarks, threshold=0.05):
     return distance < threshold
 
 # --- Main Loop ---
+cv2.namedWindow(window_name)
+cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
+
 while cap.isOpened() and running:
     success, image = cap.read()
     if not success: 
@@ -284,6 +287,12 @@ while cap.isOpened() and running:
                 cv2.FONT_HERSHEY_PLAIN, 2, state_color, 3)
 
     cv2.imshow(window_name, image)
+    
+    # Ensure window stays on top every frame
+    try:
+        cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
+    except:
+        pass
     
     # --- NEW: DYNAMIC WINDOW STYLE ---
     # Check if the state has changed
