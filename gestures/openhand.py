@@ -22,8 +22,10 @@ def move_cursor(hand_landmarks):
     
     # Define a region of interest (ROI) for hand tracking
     # This maps a smaller hand movement area to the full screen
-    roi_x_min, roi_x_max = 0.2, 0.8  # Use 15%-85% of camera view (70% total)
-    roi_y_min, roi_y_max = 0.2, 0.8  # Use 15%-85% of camera view (70% total)
+    roi_x_min, roi_x_max = 0.2, 0.8 
+    roi_y_min, roi_y_max = 0.2, 0.8
+
+    
     
     # Clamp values to ROI
     x_normalized = max(roi_x_min, min(roi_x_max, wrist.x))

@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 import math
 import time
+import pyautogui
 
 from gestures import rightclick
 from gestures import openhand
@@ -15,6 +16,9 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
 mp_drawing = mp.solutions.drawing_utils
 cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+pyautogui.PAUSE = 0 
 
 # --- Gesture State Tracking ---
 last_fist_action_time = 0
@@ -26,8 +30,7 @@ pinch_active = False  # Track if pinch is currently active
 PINCH_THRESHOLD = 0.05  # Distance threshold for pinch detection
 debug = True
 program_active = True  # Track if program is active or paused
-last_pointer_time = 0  # Track last pointer gesture time
-POINTER_COOLDOWN = 0.5  # Cooldown for toggle to prevent rapid switching
+pointer_was_up = False  # Track if pointer finger was up in previous frame
 
 # --- Helper Functions ---
 
@@ -157,13 +160,17 @@ while cap.isOpened():
             gesture_detected = "None"
 
             # POINTER FINGER: Toggle program on/off
-            if fingers_list == [0, 1, 0, 0, 0]:
+            if fingers_list == [0, 1, 0, 0, 0] or fingers_list == [1, 1, 0, 0, 0]:
                 gesture_detected = "POINTER"
-                if current_time - last_pointer_time > POINTER_COOLDOWN:
+                # Only toggle if pointer finger just went up (state change)
+                if not pointer_was_up:
                     program_active = not program_active
-                    last_pointer_time = current_time
+                    pointer_was_up = True
                     status = "ACTIVE" if program_active else "PAUSED"
                     print(f"Program {status}")
+            else:
+                # Reset the flag when pointer finger goes down
+                pointer_was_up = False
             
             # Only execute other gestures if program is active
             if program_active:
