@@ -22,8 +22,12 @@ def move_cursor(hand_landmarks):
     
     # Define a region of interest (ROI) for hand tracking
     # This maps a smaller hand movement area to the full screen
-    roi_x_min, roi_x_max = 0.2, 0.8 
-    roi_y_min, roi_y_max = 0.2, 0.8
+    roi_x_max = 0.9
+    roi_y_max = 0.9
+
+    # Calculate min values to keep the 60% (0.6) size
+    roi_x_min = 0.5  # (1.0 - 0.6)
+    roi_y_min = 0.5  # (1.0 - 0.6)
 
     
     
@@ -50,4 +54,3 @@ def move_cursor(hand_landmarks):
     # Move the cursor
     pyautogui.moveTo(x, y, duration=0)
     
-    print(f"Cursor moved to: ({x}, {y})")

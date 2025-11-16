@@ -159,7 +159,7 @@ while cap.isOpened():
             current_time = time.time()
             gesture_detected = "None"
 
-            # POINTER FINGER: Toggle program on/off
+            # Toggle program on/off
             if fingers_list == [0, 1, 0, 0, 0] or fingers_list == [1, 1, 0, 0, 0]:
                 gesture_detected = "POINTER"
                 # Only toggle if pointer finger just went up (state change)
