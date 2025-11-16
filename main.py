@@ -195,7 +195,6 @@ while cap.isOpened() and running:
                     program_active = not program_active
                     pointer_was_up = True
                     status = "ACTIVE" if program_active else "PAUSED"
-                    print(f"Program {status}")
             else:
                 pointer_was_up = False
                 
@@ -208,10 +207,23 @@ while cap.isOpened() and running:
                         action_function(hand_landmarks) 
                     
                     elif action_to_perform == "Left Click (Hold)":
+                        # NEW PINCH TIMING LOGIC
                         if not pinch_active:
-                            action_function()
+                            # First frame of pinch detected
+                            pinch_start_time = current_time
                             pinch_active = True
+                            pinch_is_held = False
+                        else:
+                            # Pinch is being held
+                            pinch_duration = current_time - pinch_start_time
+                            
+                            # If held for more than 1 second and not yet transitioned to hold
+                            if pinch_duration >= 0.5 and not pinch_is_held:
+                                action_function()  # Press and hold
+                                pinch_is_held = True
+                                
                         
+                        # Always move cursor while pinching
                         move_action_func = AVAILABLE_ACTIONS.get("Move Cursor")
                         if move_action_func:
                             move_action_func(hand_landmarks)
@@ -234,8 +246,20 @@ while cap.isOpened() and running:
     if 'current_mappings' in locals(): 
         click_hold_gesture = current_mappings.get("Left Click (Hold)", "None")
         if gesture_detected != click_hold_gesture and pinch_active:
-            AVAILABLE_ACTIONS["Left Click (Release)"]()
+            # Pinch gesture ended
+            pinch_duration = current_time - pinch_start_time if pinch_start_time else 0
+            
+            if pinch_duration < 0.5:
+                # Quick pinch (< 1 second) - perform single click
+                pyautogui.click()  # Single click action
+            elif pinch_is_held:
+                # Long pinch was held - release the held button
+                AVAILABLE_ACTIONS["Left Click (Release)"]()
+            
+            # Reset pinch state
             pinch_active = False
+            pinch_start_time = None
+            pinch_is_held = False
 
     scroll_frame_counter += 1
     
@@ -297,4 +321,3 @@ while cap.isOpened() and running:
 # --- Cleanup ---
 cap.release()
 cv2.destroyAllWindows()
-print("Main loop finished. Exiting.")
