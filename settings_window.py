@@ -207,9 +207,11 @@ class SettingsWindow:
         gesture_card = self._create_card(main_frame, "👆 Gesture Thresholds")
         self.pinch_slider = ModernSlider(gesture_card, "Pinch Threshold", self.pinch_threshold, 0.01, 0.15, 0.01, lambda v: setattr(self, 'pinch_threshold', v), "Distance between fingers to trigger pinch")
         self.pinch_slider.pack(fill=tk.X)
-        self.fist_cooldown_slider = ModernSlider(gesture_card, "Fist Cooldown", self.fist_cooldown, 0.1, 3.0, 0.1, lambda v: setattr(self, 'fist_cooldown', v), "Time between repeated fist actions", unit="s")
-        self.fist_cooldown_slider.pack(fill=tk.X)
-        self.scroll_speed_slider = ModernSlider(gesture_card, "Scroll Speed", self.scroll_speed, 1, 10, 1, lambda v: setattr(self, 'scroll_speed', int(v)), "Speed of scroll gestures")
+        self.scroll_speed_slider = ModernSlider(
+            gesture_card, "Scroll Speed", self.scroll_speed,
+            1, 10, 1, lambda v: setattr(self, 'scroll_speed', int(v)),
+            "Speed of scroll gestures"
+        )
         self.scroll_speed_slider.pack(fill=tk.X)
         
         # --- NEW: ACTION MAPPING CARD ---
