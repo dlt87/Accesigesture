@@ -147,7 +147,8 @@ def is_pinch_mid(hand_landmarks, threshold=0.05):
 # --- Main Loop ---
 cv2.namedWindow(window_name)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
-cv2.moveWindow(window_name, 0, 0)
+# Position camera window on the left side to avoid overlap with settings
+cv2.moveWindow(window_name, 20, 20)
 
 while cap.isOpened() and running:
     success, image = cap.read()
@@ -236,8 +237,8 @@ while cap.isOpened() and running:
                             # Pinch is being held
                             pinch_duration = current_time - pinch_start_time
                             
-                            # If held for more than 1 second and not yet transitioned to hold
-                            if pinch_duration >= 0.3 and not pinch_is_held:
+                            # If held for more than pinch_duration setting and not yet transitioned to hold
+                            if pinch_duration >= settings.pinch_duration and not pinch_is_held:
                                 action_function()  # Press and hold
                                 pinch_is_held = True
                                 
@@ -268,8 +269,8 @@ while cap.isOpened() and running:
             # Pinch gesture ended
             pinch_duration = current_time - pinch_start_time if pinch_start_time else 0
             
-            if pinch_duration < 0.5:
-                # Quick pinch (< 1 second) - perform single click
+            # Quick pinch (less than pinch_duration setting) - perform single click
+            if pinch_duration < settings.pinch_duration:
                 pyautogui.click()  # Single click action
             elif pinch_is_held:
                 # Long pinch was held - release the held button

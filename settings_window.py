@@ -100,6 +100,7 @@ class SettingsWindow:
         self.smoothing_factor = 0.5
         self.fist_cooldown = 1.0
         self.pinch_threshold = 0.05
+        self.pinch_duration = 0.15
         self.min_detection_confidence = 0.7
         self.min_tracking_confidence = 0.5
         self.roi_x_min = 0.5
@@ -127,8 +128,15 @@ class SettingsWindow:
         """Run the tkinter window in a separate thread."""
         self.window = tk.Tk()
         self.window.title("✋ Gesture Control Settings")
-        # --- Increased height for new button ---
-        self.window.geometry("580x980") 
+        
+        # Position settings window on the right side of screen
+        screen_width = self.window.winfo_screenwidth()
+        window_width = 580
+        window_height = 980
+        x_position = screen_width - window_width - 20  # 20px margin from right edge
+        y_position = 20  # 20px margin from top
+        
+        self.window.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}") 
         self.window.resizable(False, False)
         
         self.window.protocol("WM_DELETE_WINDOW", self._quit_app)
@@ -197,6 +205,8 @@ class SettingsWindow:
         gesture_card = self._create_card(main_frame, "👆 Gesture Thresholds")
         self.pinch_slider = ModernSlider(gesture_card, "Pinch Threshold", self.pinch_threshold, 0.01, 0.15, 0.01, lambda v: setattr(self, 'pinch_threshold', v), "Distance between fingers to trigger pinch")
         self.pinch_slider.pack(fill=tk.X)
+        self.pinch_duration_slider = ModernSlider(gesture_card, "Pinch Duration", self.pinch_duration, 0.05, 1.0, 0.05, lambda v: setattr(self, 'pinch_duration', v), "Hold time to trigger click hold (lower = more sensitive)", unit="s")
+        self.pinch_duration_slider.pack(fill=tk.X)
         self.fist_cooldown_slider = ModernSlider(gesture_card, "Fist Cooldown", self.fist_cooldown, 0.1, 3.0, 0.1, lambda v: setattr(self, 'fist_cooldown', v), "Time between repeated fist actions", unit="s")
         self.fist_cooldown_slider.pack(fill=tk.X)
         self.scroll_speed_slider = ModernSlider(gesture_card, "Scroll Speed", self.scroll_speed, 1, 10, 1, lambda v: setattr(self, 'scroll_speed', int(v)), "Speed of scroll gestures")
@@ -295,6 +305,7 @@ class SettingsWindow:
         self.smoothing_factor = 0.2
         self.fist_cooldown = 1.0
         self.pinch_threshold = 0.05
+        self.pinch_duration = 0.15
         self.min_detection_confidence = 0.7
         self.min_tracking_confidence = 0.5
         self.roi_x_min = 0.5
@@ -310,6 +321,7 @@ class SettingsWindow:
             # ... (Resetting sliders) ...
             self.smoothing_slider.set(self.smoothing_factor)
             self.pinch_slider.set(self.pinch_threshold)
+            self.pinch_duration_slider.set(self.pinch_duration)
             self.fist_cooldown_slider.set(self.fist_cooldown)
             self.scroll_speed_slider.set(self.scroll_speed)
             self.detection_conf_slider.set(self.min_detection_confidence)
