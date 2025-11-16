@@ -1,9 +1,9 @@
 import pyautogui
 
-def scroll_up():
+def scroll_up(speed=3):
   """
   Scrolls the mouse wheel up.
-  The positive value (30) with frame throttling provides smooth scrolling.
+  The positive value with frame throttling provides smooth scrolling.
   """
-  pyautogui.scroll(30)
+  pyautogui.scroll(speed * 10)
   print("Action: Scroll Up") # For debugging

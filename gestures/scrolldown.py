@@ -1,9 +1,9 @@
 import pyautogui
 
-def scroll_down():
+def scroll_down(speed=3):
   """
   Scrolls the mouse wheel down.
-  The negative value (-30) with frame throttling provides smooth scrolling.
+  The negative value with frame throttling provides smooth scrolling.
   """
-  pyautogui.scroll(-30)
+  pyautogui.scroll(-speed * 10)
   print("Action: Scroll Down (Thumbs Down)") # For debugging
