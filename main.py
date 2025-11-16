@@ -6,14 +6,14 @@ import time
 import pyautogui
 import tkinter as tk 
 
-# --- NEW: pywin32 for click-through ---
-# (Keep this if you still want the click-through window)
+# --- pywin32 for window control ---
 try:
     import win32api
     import win32con
     import win32gui
 except ImportError:
-    print("pywin32 not found. Window click-through will be disabled.")
+    print("pywin32 not found. Window style cannot be changed.")
+    print("Run: pip install pywin32")
 # --- END NEW ---
 
 from gestures import rightclick
@@ -23,7 +23,7 @@ from gestures import scrolldown
 from gestures import leftclick
 from settings_window import SettingsWindow
 
-# --- NEW: Global running flag ---
+# --- Global running flag ---
 running = True
 
 def quit_program():
@@ -46,7 +46,7 @@ AVAILABLE_ACTIONS = {
 
 pyautogui.FAILSAFE = False
 
-# --- NEW: Pass the quit function to the settings window ---
+# --- Pass the quit function to the settings window ---
 settings = SettingsWindow(on_quit=quit_program)
 settings.create_window()
 
@@ -73,7 +73,10 @@ debug = True
 program_active = True 
 pointer_was_up = False 
 window_name = "accessiGesture"
-window_handle_set = False # For click-through
+
+# --- NEW: Track window style state ---
+last_lock_state = None
+# --- END NEW ---
 
 # --- Helper Functions (No changes) ---
 def get_distance(lm1, lm2):
@@ -136,11 +139,10 @@ def is_pinch_mid(hand_landmarks, threshold=0.05):
     return distance < threshold
 
 # --- Main Loop ---
-# --- NEW: Check the 'running' flag ---
 while cap.isOpened() and running:
     success, image = cap.read()
     if not success: 
-        running = False # Stop if camera fails
+        running = False
         continue
 
     image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
@@ -160,7 +162,7 @@ while cap.isOpened() and running:
             lms = hand_landmarks.landmark
             current_time = time.time()
             
-            # --- (All the gesture detection and action logic remains the same) ---
+            # --- (All gesture detection and action logic remains the same) ---
             
             # 1. --- DETECT GESTURE ---
             if is_pinch(hand_landmarks, settings.pinch_threshold):
@@ -210,7 +212,6 @@ while cap.isOpened() and running:
                             action_function()
                             pinch_active = True
                         
-                        # --- CLICK AND DRAG FIX ---
                         move_action_func = AVAILABLE_ACTIONS.get("Move Cursor")
                         if move_action_func:
                             move_action_func(hand_landmarks)
@@ -227,8 +228,6 @@ while cap.isOpened() and running:
             # --- (Debug text remains the same) ---
             if debug:
                 cv2.putText(image, f"Gesture: {gesture_detected}", (10, 50), 
-                            cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
-                cv2.putText(image, f"Action: {action_to_perform}", (10, 90), 
                             cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
 
     # --- (Click release logic remains the same) ---
@@ -247,34 +246,53 @@ while cap.isOpened() and running:
 
     cv2.imshow(window_name, image)
     
-    # --- (Click-through logic remains the same) ---
-    if not window_handle_set:
+    # --- NEW: DYNAMIC WINDOW STYLE ---
+    # Check if the state has changed
+    current_lock_state = settings.camera_window_locked
+    if current_lock_state != last_lock_state:
         try:
-            hwnd = cv2.getWindowProperty(window_name, cv2.WND_PROP_HWND)
-            style = win32api.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-            style = style | win32con.WS_EX_LAYERED | win32con.WS_EX_TRANSPARENT
-            win32api.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, style)
-            win32gui.SetLayeredWindowAttributes(hwnd, 0, 250, win32con.LWA_ALPHA)
-            win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0,0,0,0, 
-                                 win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
-            window_handle_set = True
-        except Exception as e:
-            pass 
+            hwnd = win32gui.FindWindow(None, window_name)
+            if hwnd:
+                style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+                ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
 
-    # --- NEW: Check 'running' flag instead of 'q' key ---
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        running = False # 'q' key still works
+                if current_lock_state:
+                    # LOCK THE WINDOW
+                    # Add click-through and remove title bar
+                    style = style & ~win32con.WS_CAPTION & ~win32con.WS_SYSMENU
+                    ex_style = ex_style | win32con.WS_EX_TRANSPARENT | win32con.WS_EX_LAYERED
+                    win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
+                    win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, ex_style)
+                else:
+                    # UNLOCK THE WINDOW
+                    # Add title bar and remove click-through
+                    style = style | win32con.WS_CAPTION | win32con.WS_SYSMENU
+                    ex_style = ex_style & ~win32con.WS_EX_TRANSPARENT & ~win32con.WS_EX_LAYERED
+                    win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
+                    win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, ex_style)
+                
+                # Force window to update its frame
+                win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0,0,0,0, 
+                                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOZORDER | win32con.SWP_FRAMECHANGED)
+                print(f"Window locked: {current_lock_state}")
+
+            last_lock_state = current_lock_state
+        except Exception as e:
+            print(f"Error setting window style: {e}")
+    # --- END NEW ---
+
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('q'):
+        running = False 
     
-    # Check if window was closed
     try:
         if cv2.getWindowProperty(window_name, cv2.WND_PROP_VISIBLE) < 1:
-            running = False # Stop if CV window is closed
+            running = False
     except cv2.error:
-        running = False # Stop if CV window is destroyed
+        running = False
     
-    # Check if the settings window thread is still alive
     if not settings.thread.is_alive():
-        running = False # Stop if settings window was closed
+        running = False 
 
 # --- Cleanup ---
 cap.release()

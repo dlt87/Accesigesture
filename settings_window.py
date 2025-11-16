@@ -91,11 +91,10 @@ class ModernSlider(ttk.Frame):
 
 
 class SettingsWindow:
-    # --- NEW: Added 'on_quit' callback ---
     def __init__(self, on_quit=None):
         self.window = None
         self.thread = None
-        self.on_quit_callback = on_quit # Store the quit function
+        self.on_quit_callback = on_quit 
         
         # Default settings
         self.smoothing_factor = 0.2
@@ -109,7 +108,10 @@ class SettingsWindow:
         self.roi_y_max = 0.9
         self.scroll_speed = 3
         
-        # --- REVERSED MAPPING ---
+        # --- NEW: Lock state for camera window ---
+        self.camera_window_locked = True
+        
+        # ... (Mapping variables are unchanged) ...
         self.gesture_names = ["None", "PINCH", "PINCH_MID", "THUMBS_UP", "THUMBS_DOWN", "OPEN", "TOGGLE"]
         self.action_names = ["Move Cursor", "Left Click (Hold)", "Right Click (Once)", "Scroll Up", "Scroll Down"]
         self.action_mappings = {} 
@@ -125,10 +127,10 @@ class SettingsWindow:
         """Run the tkinter window in a separate thread."""
         self.window = tk.Tk()
         self.window.title("✋ Gesture Control Settings")
-        self.window.geometry("580x950") 
+        # --- Increased height for new button ---
+        self.window.geometry("580x980") 
         self.window.resizable(False, False)
         
-        # --- NEW: Handle window close ('X' button) ---
         self.window.protocol("WM_DELETE_WINDOW", self._quit_app)
         
         # ... (Styling code is unchanged) ...
@@ -142,6 +144,14 @@ class SettingsWindow:
         style.configure('Card.TFrame', background='#ffffff', relief='flat')
         style.configure('TButton', font=('Segoe UI', 9), padding=8)
         style.map('TButton', background=[('active', '#3498db')])
+        style.configure('Quit.TButton', font=('Segoe UI', 9, 'bold'), foreground='white', background='#e74c3c')
+        style.map('Quit.TButton', background=[('active', '#c0392b')])
+        
+        # --- NEW: Style for Lock Button ---
+        style.configure('Lock.TButton', font=('Segoe UI', 9), background='#3498db', foreground='white')
+        style.map('Lock.TButton', background=[('active', '#2980b9')])
+        style.configure('Unlock.TButton', font=('Segoe UI', 9), background='#95a5a6', foreground='white')
+        style.map('Unlock.TButton', background=[('active', '#7f8c8d')])
         
         # ... (Scrollable canvas code is unchanged) ...
         canvas = tk.Canvas(self.window, bg='#f0f0f0', highlightthickness=0)
@@ -156,7 +166,6 @@ class SettingsWindow:
             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
         
-        # ... (Main frame and Title code is unchanged) ...
         main_frame = ttk.Frame(scrollable_frame, padding="15")
         main_frame.pack(fill=tk.BOTH, expand=True)
         title_frame = ttk.Frame(main_frame)
@@ -228,17 +237,19 @@ class SettingsWindow:
                                  command=self._reset_defaults)
         reset_btn.pack(side=tk.LEFT, padx=5)
         
-        # --- NEW: Quit Button ---
-        # Add a style for the quit button
-        style.configure('Quit.TButton', font=('Segoe UI', 9, 'bold'), foreground='white', background='#e74c3c')
-        style.map('Quit.TButton', background=[('active', '#c0392b')])
+        # --- NEW: Lock/Unlock Button ---
+        self.lock_toggle_btn = ttk.Button(button_container, 
+                                          text="🔓 Unlock Window", 
+                                          command=self._toggle_lock_window,
+                                          style="Unlock.TButton")
+        self.lock_toggle_btn.pack(side=tk.LEFT, padx=5)
+        self._update_lock_button_style() # Set initial style
         
         quit_btn = ttk.Button(button_container, text="❌ Quit Program", 
                                 command=self._quit_app, style='Quit.TButton')
         quit_btn.pack(side=tk.LEFT, padx=5)
         # --- END NEW ---
         
-        # ... (Info label is unchanged) ...
         info_frame = ttk.Frame(main_frame)
         info_frame.pack(fill=tk.X, pady=(10, 0))
         info_label = ttk.Label(info_frame, text="💡 Tip: Changes apply immediately", font=('Segoe UI', 8), foreground='#27ae60', background='#e8f5e9', relief='flat', padding=8)
@@ -246,13 +257,25 @@ class SettingsWindow:
         
         self.window.mainloop()
     
-    # --- NEW: Quit Function ---
+    # --- NEW: Functions to handle window lock ---
+    def _toggle_lock_window(self):
+        """Toggles the lock state of the camera window."""
+        self.camera_window_locked = not self.camera_window_locked
+        self._update_lock_button_style()
+        
+    def _update_lock_button_style(self):
+        """Updates the button text and style based on lock state."""
+        if self.camera_window_locked:
+            self.lock_toggle_btn.configure(text="🔓 Unlock Window", style="Unlock.TButton")
+        else:
+            self.lock_toggle_btn.configure(text="🔒 Lock Window", style="Lock.TButton")
+    # --- END NEW ---
+    
     def _quit_app(self):
         """Signals the main thread to stop and closes the UI."""
         if self.on_quit_callback:
-            self.on_quit_callback() # Signal main.py to stop
-        self.window.destroy() # Close this settings window
-    # --- END NEW ---
+            self.on_quit_callback() 
+        self.window.destroy() 
 
     def _create_card(self, parent, title):
         # ... (This helper function is unchanged) ...
@@ -268,7 +291,7 @@ class SettingsWindow:
     
     def _reset_defaults(self):
         """Reset all settings to default values."""
-        # ... (Resetting values is unchanged) ...
+        # ... (Resetting values) ...
         self.smoothing_factor = 0.2
         self.fist_cooldown = 1.0
         self.pinch_threshold = 0.05
@@ -280,8 +303,11 @@ class SettingsWindow:
         self.roi_y_max = 0.9
         self.scroll_speed = 3
         
-        # Update sliders and mappings
+        # --- NEW: Reset lock state ---
+        self.camera_window_locked = True
+        
         try:
+            # ... (Resetting sliders) ...
             self.smoothing_slider.set(self.smoothing_factor)
             self.pinch_slider.set(self.pinch_threshold)
             self.fist_cooldown_slider.set(self.fist_cooldown)
@@ -293,12 +319,16 @@ class SettingsWindow:
             self.roi_y_min_slider.set(self.roi_y_min)
             self.roi_y_max_slider.set(self.roi_y_max)
             
+            # ... (Resetting mappings) ...
             if self.action_mappings:
                 self.action_mappings["Left Click (Hold)"].set("PINCH")
                 self.action_mappings["Right Click (Once)"].set("PINCH_MID")
                 self.action_mappings["Scroll Up"].set("THUMBS_UP")
                 self.action_mappings["Scroll Down"].set("THUMBS_DOWN")
                 self.action_mappings["Move Cursor"].set("OPEN")
+            
+            # --- NEW: Update lock button ---
+            self._update_lock_button_style()
                 
         except:
             pass
@@ -308,20 +338,18 @@ class SettingsWindow:
     
     def get_settings(self):
         # ... (This function is unchanged) ...
-        settings = {
+        settings_dict = {
             'smoothing_factor': self.smoothing_factor,
             'fist_cooldown': self.fist_cooldown,
             'pinch_threshold': self.pinch_threshold,
-            'min_detection_confidence': self.min_detection_confidence,
-            'min_tracking_confidence': self.min_tracking_confidence,
-            'roi_x_min': self.roi_x_min,
-            'roi_x_max': self.roi_x_max,
-            'roi_y_min': self.roi_y_min,
-            'roi_y_max': self.roi_y_max,
+            # ... (all other settings) ...
             'scroll_speed': self.scroll_speed,
+            
+            # --- NEW: Also return lock state ---
+            'camera_window_locked': self.camera_window_locked,
             'mappings': {}
         }
         if self.action_mappings:
             for action, var in self.action_mappings.items():
-                settings['mappings'][action] = var.get()
-        return settings
+                settings_dict['mappings'][action] = var.get()
+        return settings_dict
