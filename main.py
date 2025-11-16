@@ -1,3 +1,4 @@
+# import important libraries
 import cv2
 import mediapipe as mp
 import math
@@ -5,14 +6,14 @@ import time
 import pyautogui
 
 from gestures import rightclick
-from gestures import openhand
-from gestures import scrolldown
+from gestures import openhandq
 from gestures import scrollup
 from gestures import leftclick
 from settings_window import SettingsWindow
 
+pyautogui.FAILSAFE = False
 
-# --- Settings Window ---
+# create settings window
 settings = SettingsWindow()
 settings.create_window()
 
@@ -193,7 +194,7 @@ while cap.isOpened():
                         pinch_active = False
                 
                 # FIST: Single right-click with cooldown
-                if fingers_list == [0, 0, 0, 0, 0]:
+                if fingers_list == [0, 0, 0, 0, 0] or fingers_list == [1, 0, 0, 0, 0]:
                     gesture_detected = "FIST"
                     if current_time - last_fist_action_time > settings.fist_cooldown:
                         rightclick.rightclick()
